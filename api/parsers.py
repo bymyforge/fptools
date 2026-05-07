@@ -1,10 +1,10 @@
-import logging
+
 import json
 from bs4 import BeautifulSoup
 
 from models.chat import Chat
 from models.account import Balance
-from utils.errors import NullData
+from utils.errors import NullData, ParseException
 
 class FunPayParser:
 
@@ -64,4 +64,50 @@ class FunPayParser:
             result['user-id'] = app_data.get('userId', '')
             return result
         except Exception as e:
-            logging.error(e)
+            raise
+
+    @staticmethod
+    def parse_profile(html_content: str):
+        soup = BeautifulSoup(html_content, 'html.parser')
+        offer_list = soup.find_all('div', class_='offer')
+        category_ids = []
+        for offer in offer_list:
+            link_tag = offer.find('a', href=True)
+            if link_tag:
+                href = link_tag['href']
+                parts = href.strip('/').split('/')
+                if 'lots' in parts:
+                    node_id = parts[-1]
+                    category_ids.append(node_id)
+        return list(set(category_ids))
+
+    @staticmethod
+    def parse_lot_menu(html_content: str):
+        soup = BeautifulSoup(html_content, 'html.parser')
+        try:
+            button = soup.find('button', class_='js-lot-raise')
+            if button:
+                return button.get('data-game')
+            raise NullData()
+        except Exception as e:
+            raise ParseException()
+
+    @staticmethod
+    def parse_main_menu(html_content: str):
+        soup = BeautifulSoup(html_content, 'html.parser')
+        user_link = soup.find('a', class_='user-link-dropdown')
+        result = {}
+        if user_link:
+            href = user_link.get('href', '')
+            user_id = href.strip('/').split('/')[-1]
+            result['user-id'] =  user_id
+        else:
+            raise NullData()
+        body = soup.find('body')
+        if not body:
+            raise NullData('Body tag is not found')
+        app_data_str = body.get('data-app-data', '{}')
+        app_data = json.loads(app_data_str)
+        result['csrf-token'] = app_data.get('csrf-token', '')
+        return result
+        

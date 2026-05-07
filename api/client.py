@@ -32,11 +32,39 @@ class FunPayClient:
         "X-Cp-Csrf-Token": csrf_token,
         "Referer": f"https://funpay.com/chat/?node={node_name.split('-')[-1]}"
     }
-        r = await self.client.post('/chat/message/', data=payload, headers=headers)
-        print(f"DEBUG | Статус: {r.status_code}")
-        print(f"DEBUG | Ответ: {r.text}")
+        r = await self.client.post('/runner/', data=payload, headers=headers)
         return r.json()
 
     async def get_current_chat(self, chat_id):
         r = await self.client.get(f'/chat/?node={chat_id}')
         return r.text
+
+    async def get_user_profile(self, user_id):
+        r = await self.client.get(f'/users/{user_id}/')
+        return r.text
+
+    async def lot_menu_by_category(self, category_id):
+        r = await self.client.get(f'/lots/{category_id}/trade')
+        return r.text
+
+    async def get_main_menu(self):
+        r = await self.client.get('/')
+        return r.text
+
+    async def raise_lot(self, node_id, game_id, csrf_token):
+        payload = {
+            'game_id': game_id,
+            'node_id': node_id,
+            'csrf_token': csrf_token
+        }
+        headers = {
+            "X-Requested-With": "XMLHttpRequest",
+            "X-Cp-Csrf-Token": csrf_token
+        }
+        r = await self.client.post('/lots/raise', data=payload, headers=headers)
+        if "application/json" in r.headers.get("Content-Type", ""):
+            response = r.json()
+            return response.get('msg')
+        else:
+            return {"error": "not_json", "status": r.status_code}
+            

@@ -1,8 +1,9 @@
-import httpx
+
 from bs4 import BeautifulSoup
 from models.chat import ChatData
 from api.client import FunPayClient
 from api.parsers import FunPayParser
+from utils.errors import MessageNotDelivered
 
 
 class Account:
@@ -48,15 +49,24 @@ class Account:
         return balance
 
     async def send_message(self, chat_id:str, text:str):
+        '''
+        The function takes chat_id, text.  
+        Sends a message to the given chat, on success it returns 'succes', on error it returns the error MessageNotDelivered
+        '''
         if chat_id not in self.node_names or not self.csrf_token:
             await self.get_chat_data(chat_id)
-        last_id = self.last_msg_ids.get(chat_id, 0)
-        response = await self.client.send_message_request(self.node_names[chat_id], last_id, text, self.csrf_token)
-        if response.get('id'):
-            self.last_msg_ids[chat_id] = response.get('id')
-        return response
+        response = await self.client.send_message_request(self.node_names[chat_id], -1, text, self.csrf_token)
+        inner_response = response.get('response', {})
+        if inner_response.get('error') is None:
+            return 'success'
+        else:
+            error_msg = inner_response.get('error', 'Unknown error')
+            raise MessageNotDelivered(f'Server returned a error: {error_msg}')
 
     async def get_chat_data(self, chat_id):
+        '''
+        https://funpay.com/chat/?node={chat_id}
+        '''
         html = await self.client.get_current_chat(chat_id)
         data = self.parser.parse_chat(html)
         chat = ChatData(node_name=data['data-name'], csrf_token=data['csrf-token'], user_id=data['user-id'])
@@ -64,3 +74,50 @@ class Account:
         self.csrf_token = chat.csrf_token
         self.user_id = chat.user_id
         return chat
+
+    async def profile(self, user_id=None):
+        '''
+        Function gets user lots  
+        Takes user_id, nullable  
+        If user_id is null, the value will be your session user_id  
+        https://funpay.com/users/{user_id}/  
+        '''
+        target_id = user_id or self.user_id
+        if not target_id:
+            target_id = await self.get_user_data()
+        html = await self.client.get_user_profile(target_id)
+        data = self.parser.parse_profile(html)
+        return data
+
+    async def get_game_id(self, category_id):
+        '''
+        https://funpay.com/lots/{category_id}/trade
+        '''
+        html = await self.client.lot_menu_by_category(category_id)
+        data = self.parser.parse_lot_menu(html)
+        return data
+
+    async def raise_lots(self):
+        '''
+        The function raises your lots and returns a response from the FunPay server.
+        '''
+        if not self.csrf_token:
+            await self.get_user_data()
+        category_list = await self.profile()
+        response = []
+        for node_id in category_list:
+            game_id = await self.get_game_id(node_id)
+            response.append(await self.client.raise_lot(node_id, game_id, self.csrf_token))
+        return response
+
+    async def get_user_data(self):
+        '''
+        Func gets user data, and save it to cache
+        user_id
+        csrf_token
+        '''
+        html = await self.client.get_main_menu()
+        data = self.parser.parse_main_menu(html)
+        self.user_id = data['user-id']
+        self.csrf_token = data['csrf-token']
+        return data
