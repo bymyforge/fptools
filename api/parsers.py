@@ -148,7 +148,7 @@ class FunPayParser:
         tc_items = soup.find_all('a', class_='tc-item')
         for item in tc_items:
             pre_result = {}
-            pre_result['order-id'] = item.find('div', class_='tc-order').get_text(strip=True)
+            pre_result['order-id'] = item.find('div', class_='tc-order').get_text(strip=True).replace('#', '')
             pre_result['order-time'] = item.find('div', class_='tc-date-time').get_text(strip=True)
             pre_result['client-name'] = item.find('span', class_='pseudo-a').get_text(strip=True)
             pre_result['status'] = item.find('div', class_='tc-status').get_text(strip=True)
@@ -158,4 +158,15 @@ class FunPayParser:
             pre_result['name'] = divs[0].get_text(strip=True)
             pre_result['category'] = divs[1].get_text(strip=True)
             result.append(pre_result)
+        return result
+
+    @staticmethod
+    def parse_order_page(html_content):
+        soup = BeautifulSoup(html_content, 'html.parser')
+        result = {}
+        try:
+            result['status'] = soup.find('span', class_='text-warning').get_text(strip=True)
+        except AttributeError:
+            result['status'] = 'Ошибка'
+            return result
         return result

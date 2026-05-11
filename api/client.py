@@ -75,3 +75,16 @@ class FunPayClient:
     async def get_my_sells(self):
         r = await self.client.get('/orders/trade')
         return r.text
+
+    async def refund_order(self, csrf_token, order_id):
+        url = f'/orders/refund'
+        payload = {
+            'csrf_token': csrf_token,
+            'id': order_id
+        }
+        r = await self.client.post(url, data=payload)
+        return r
+
+    async def get_order_info(self, order_id):
+        r = await self.client.get(f'/orders/{order_id}/')
+        return r.text

@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Optional
 
 @dataclass
 class Balance:
@@ -23,10 +24,10 @@ class UserData:
 
 @dataclass
 class Order:
-    order_id: str
-    order_time: str
-    client_name: str
-    price: float
-    status: str
-    name: str
-    category: str
+    order_id: Optional[str] = None
+    order_time: Optional[str] = None
+    client_name: Optional[str] = None
+    price: Optional[float] = None
+    status: Optional[str] = None
+    name: Optional[str] = None
+    category: Optional[str] = None

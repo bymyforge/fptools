@@ -1,11 +1,11 @@
-
+import json
 from bs4 import BeautifulSoup
 from models.chat import ChatData
 from models.account import LotInfo, Profile, UserData, Order
 from models.lots import CurrentLotInfo
 from api.client import FunPayClient
 from api.parsers import FunPayParser
-from utils.errors import MessageNotDelivered, RaisingLotError
+from utils.errors import MessageNotDelivered, RaisingLotError, FunPayRefundError, RequestError
 
 
 class Account:
@@ -192,5 +192,27 @@ class Account:
         return lot
     
     async def refund_order(self, order_id):
-        pass
+        '''
+        Func post data to /orders/refund
+        Return True is 200, if error raise FunPayRefundError
+        '''
+        if not self.csrf_token:
+            await self.get_user_data()
+        response = await self.client.refund_order(self.csrf_token, order_id)
+        if response.status_code == 200:
+            s = await self.get_order_details(order_id)
+            status = s.status
+            if status == 'Возврат':
+                return True
+            raise FunPayRefundError(f'Cant make refund. Now order status is: {status}')
 
+    async def get_order_details(self, order_id):
+        '''
+        Func get data in /orders/{order_id}/
+        return object with:
+            status: str
+        '''
+        html = await self.client.get_order_info(order_id)
+        data = self.parser.parse_order_page(html)
+        order = Order(status=data['status'])
+        return order

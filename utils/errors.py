@@ -18,3 +18,10 @@ class MessageNotDelivered(AccountError):
 
 class RaisingLotError(AccountError):
     message = 'Raising lot error'
+
+class FunPayRefundError(AccountError):
+    message = 'Refunding error'
+
+class RequestError(AccountError):
+    """Error by get and parsing response"""
+    pass
