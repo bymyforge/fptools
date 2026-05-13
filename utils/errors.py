@@ -33,3 +33,7 @@ class RequestError(AccountError):
 class LotEditingError(AccountError):
     '''Error by editing lot'''
     message = 'Editing error'
+
+class AnswerReviewError(AccountError):
+    ''''Ошибка при ответе на отзыв'''
+    message = 'Ошибка ответа на отзыв'

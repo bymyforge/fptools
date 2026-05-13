@@ -110,3 +110,18 @@ class FunPayClient:
             payload['active'] = 'on'
         r = await self.client.post('/lots/offerSave', data=payload)
         return r
+
+    async def answer_review(self, authorid: str, text: str, csrf_token: str, orderid: str):
+        payload = {
+            'authorId': authorid,
+            'text': text,
+            'rating': '',
+            'csrf_token': csrf_token,
+            'orderId': orderid
+        }
+        headers = {
+            "X-Requested-With": "XMLHttpRequest",
+            "X-Cp-Csrf-Token": csrf_token
+        }
+        response = await self.client.post('/orders/review', data=payload, headers=headers)
+        return response

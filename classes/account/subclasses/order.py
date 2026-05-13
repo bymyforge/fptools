@@ -10,10 +10,10 @@ class OrderManager:
         Func get data in /orders/{order_id}/
         return object with:
             status: str
+            review
         '''
         html = await self.account.client.get_order_info(order_id)
         data = self.account.parser.parse_order_page(html)
-        print(data)
         order = Order(status=data['status'], review=data['review'])
         return order
 

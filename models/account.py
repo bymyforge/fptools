@@ -32,3 +32,4 @@ class Order:
 class Review:
     text: str
     stars: int
+    answer: str

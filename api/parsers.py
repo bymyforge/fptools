@@ -167,7 +167,11 @@ class FunPayParser:
         try:
             result['status'] = soup.find('h1', class_='page-header').find('span').get_text(strip=True)
             result['review']['text'] = soup.find('div', class_='review-item-text').get_text(strip=True)
-            result['review']['stars'] = soup.find('div', class_='review-container').get('data-rating')
+            review_container = soup.find('div', class_='review-container')
+            result['review']['stars'] = review_container.get('data-rating')
+            answer_div = review_container.find('div', class_='review-item-answer')
+            text_container = answer_div.find('div')
+            result['review']['answer'] = text_container.get_text('\n', strip=True)
         except AttributeError:
             result['status'] = 'Ошибка'
             return result
