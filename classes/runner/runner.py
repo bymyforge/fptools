@@ -4,16 +4,19 @@ from types import SimpleNamespace
 
 from utils.errors import CriticalRunnerError
 from classes.runner.subclasses.chat import ChatRunner
+from classes.runner.subclasses.order import OrderRunner
 
 class Runner:
     def __init__(self, account):
         self.account = account
         self.chat = ChatRunner(self)
+        self.order = OrderRunner(self)
         self.msgs = []
-        self.orders = []
         self.old_msgs = []
+        self.orders = []
         self.old_orders = []
         self.message_handlers = []
+        self.order_handlers = []
     
     async def runner_polling(self, timer):
         '''
@@ -35,9 +38,23 @@ class Runner:
             return func
         return decorator
 
+    def order_handler(self):
+        def decorator(func):
+            self.order_handlers.append(func)
+            return func
+        return decorator
+
     async def cache_runner(self):
+
+        #   проверка чатов
         await self.chat.update_chat_cache()
         chats = await self.chat.compare_chat_cache()
         if chats:
             for handler in self.message_handlers:
                 await handler(chats)
+        #   проверка заказов
+        await self.order.update_order_cache()
+        orders = await self.order.compare_order_cache()
+        if orders:
+            for handler in self.order_handlers:
+                await handler(orders)
