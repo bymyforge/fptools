@@ -2,6 +2,7 @@ import asyncio
 import httpx
 from types import SimpleNamespace
 
+from utils.errors import CriticalRunnerError
 from classes.runner.subclasses.chat import ChatRunner
 
 class Runner:
@@ -12,13 +13,8 @@ class Runner:
         self.orders = []
         self.old_msgs = []
         self.old_orders = []
-
-    async def cache_runner(self):
-        await self.chat.update_chat_cache()
-        chats = await self.chat.compare_chat_cache()
-        if chats:
-            print(chats)
-
+        self.message_handlers = []
+    
     async def runner_polling(self, timer):
         '''
         Принимает timer - количество секунд, раз в который будет проверка новых событий
@@ -28,6 +24,20 @@ class Runner:
             try:
                 await self.cache_runner()
                 await asyncio.sleep(timer)
-            except httpx.ConnectTimeout:
+            except (httpx.ConnectTimeout, httpx.RemoteProtocolError, httpx.ReadTimeout, httpx.ConnectError):
                 await asyncio.sleep(timer)
-        # добавить декораторы, чтоб юзер мог удобно ловить события, но для начала реализовать выборку нужного события(типа новое сообщение, новый заказ и тд.)
+            except Exception as e:
+                raise CriticalRunnerError(message=str(e))
+
+    def message_handler(self):
+        def decorator(func):
+            self.message_handlers.append(func)
+            return func
+        return decorator
+
+    async def cache_runner(self):
+        await self.chat.update_chat_cache()
+        chats = await self.chat.compare_chat_cache()
+        if chats:
+            for handler in self.message_handlers:
+                await handler(chats)

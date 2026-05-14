@@ -10,6 +10,11 @@ class ParseException(Exception):
         self.message = message
         super().__init__(self.message)
 
+class RunnerError(Exception):
+    def __init__(self, message='Runner error'):
+        self.message = message
+        super().__init__(self.message)
+
 class NullData(ParseException):
     '''Data is null'''
     message = 'Null Data'
@@ -37,3 +42,7 @@ class LotEditingError(AccountError):
 class AnswerReviewError(AccountError):
     ''''Ошибка при ответе на отзыв'''
     message = 'Ошибка ответа на отзыв'
+
+class CriticalRunnerError(RunnerError):
+    '''Критическая ошибка раннера, сообщение к ошибке содержит всю информацию'''
+    pass
