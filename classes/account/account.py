@@ -10,6 +10,9 @@ from classes.account.subclasses.editor import FunPayEditor
 from classes.account.subclasses.review import ReviewManager
 
 class Account:
+    '''
+    Взаимодействует с аккаунтом.
+    '''
     def __init__(self, client):
         self.http_client = client
         self.client = FunPayClient(self.http_client)

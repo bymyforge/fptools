@@ -7,10 +7,14 @@ class OrderManager:
     
     async def get_order_details(self, order_id):
         '''
-        Func get data in /orders/{order_id}/
-        return object with:
-            status: str
-            review
+        Функция запрашивает детали заказа из /orders/{order_id}/.
+
+        Args:
+            order_id (str | int): Айди заказа
+        Returns:
+            Order: Объект с данными:  
+                - status (str): Статус заказа.  
+                - review (dict): Словарь с данными отзыва, который оставили к заказу.  
         '''
         html = await self.account.client.get_order_info(order_id)
         data = self.account.parser.parse_order_page(html)
@@ -19,8 +23,15 @@ class OrderManager:
 
     async def refund_order(self, order_id):
         '''
-        Func post data to /orders/refund
-        Return True is 200, if error raise FunPayRefundError
+        Делает возврат заказа.
+
+        Args:
+            order_id (str | int): Айди заказа
+        Returns:
+            bool: True если возврат прошёл успешно. 
+        Raises:
+            FunPayRefundError: Не удалось сделать возврат.  
+        
         '''
         if not self.account.csrf_token:
             await self.account.profile.get_user_data()

@@ -9,9 +9,12 @@ class ProfileManager:
 
     async def get_user_data(self):
         '''
-        Func gets user data, and save it to cache
-            user_id
-            csrf_token
+        Запрашивает данные юзера, сохраняет их в кеш.
+        
+        Returns:
+            UserData: Объект с данными юзера:   
+                - user_id (str): ID юзера.  
+                - csrf_token (str): Нужен для любого post запроса на funpay.    
         '''
         html = await self.account.client.get_main_menu()
         data = self.account.parser.parse_main_menu(html)
@@ -22,16 +25,19 @@ class ProfileManager:
 
     async def get_my_sells(self, limit:int=0):
         '''
-        Accept limit of orders arg, can be null(return all orders)
-        Func get https://funpay.com/orders/trade
-        Returns list of objects with orders
-            order_id: str
-            order_time: str
-            client_name: str
-            price: float
-            status: str
-            name: str
-            category: str
+        Запрашивает страницу продаж юзера.
+
+        Args:
+            limit (int): Лимит заказов, которые нужно вернуть(если 0, то вернёт все заказы).
+        Returns:
+            list: Список объектов, каждый содержит в себе:  
+                - order_id (str): ID заказа.    
+                - order_time (str): Время создания заказа.  
+                - client_name (str): Имя клиента.   
+                - price (float): Сумма заказа.  
+                - status (str): Статус заказа.  
+                - name (str): Название заказа.  
+                - category (str): Категория заказа.     
         '''
         html = await self.account.client.get_my_sells()
         data = self.account.parser.parse_my_sells(html)
@@ -57,13 +63,13 @@ class ProfileManager:
 
     async def profile(self, user_id=None):
         '''
-        Function gets user info  
-        Takes user_id, nullable  
-        If user_id is null, the value will be your session user_id  
-        Returns object with 
-            category_ids(node_id)
-            lots[{lot['name']: lot['id']}]
-        https://funpay.com/users/{user_id}/  
+        Запрашивает профиль юзера.
+        Args:
+            user_id (str | int): Можно не передавать, если None, сама узнает айди владельца сессии и запросит данные о нём. Айди юзера.
+        Returns:
+            Profile: Объект, с данными:  
+                - category_ids (list): Айди категорий, в которых у юзера выставлены лоты.   
+                - lots (list): Список словарей с лотами юзера юзера {lot['name']: lot['id']}.  
         '''
         target_id = user_id or self.account.user_id
         if not target_id:
@@ -77,10 +83,13 @@ class ProfileManager:
 
     async def get_balance(self):
         '''
-        The function calls the account balance, returns an object with values:  
-            rub: float  
-            usd: float  
-            eur: float  
+        Собирает баланс аккаунта.
+
+        Returns:
+            Balance: Объект с валютами:    
+                - rub (float): Баланс в рублях  
+                - usd (float): Баланс в долларах  
+                - eur (float): Баланс в евро
         '''
         html = await self.account.client.get_finance_page()
         balance = self.account.parser.parse_finanses(html)
